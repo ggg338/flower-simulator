@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flower Growth Simulator</title>
+<style>
+  body{
+    margin:0;
+    height:100vh;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(180deg,#dff3ff,#f2fff0);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#1e2f42;
+  }
+  .phone{
+    width:min(100%,430px);
+    height:860px;
+    background:rgba(255,255,255,.55);
+    border:1px solid rgba(0,0,0,.04);
+    border-radius:32px;
+    box-shadow:0 25px 50px rgba(20,40,70,.12);
+    overflow:hidden;
+    position:relative;
+  }
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 22px;
+    font-weight:700;
+    font-size:16px;
+    background:rgba(255,255,255,.15);
+  }
+  .app{
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    height:calc(100% - 44px);
+    gap:14px;
+  }
+  h1{
+    margin:0;
+    font-size:38px;
+    line-height:1.05;
+    letter-spacing:-2px;
+    font-weight:800;
+  }
+  .small{
+    margin:0 0 6px;
+    color:#677b92;
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    font-weight:700;
+  }
+  .stats{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .card{
+    background:rgba(255,255,255,.7);
+    border:1px solid rgba(20,40,70,.06);
+    border-radius:18px;
+    padding:13px 16px;
+    backdrop-filter:blur(8px);
+  }
+  .label{
+    display:block;
+    color:#677b92;
+    font-size:12px;
+    margin-bottom:7px;
+  }
+  .value{
+    font-size:24px;
+    font-weight:800;
+    letter-spacing:-1px;
+  }
+  .scene{
+    flex:1;
+    position:relative;
+    border-radius:28px;
+    background:linear-gradient(180deg,#d9f1ff 0%,#f5fdf8 55%,#edf9d8 100%);
+    overflow:hidden;
+    border:1px solid rgba(20,40,70,.05);
+    min-height:330px;
+  }
+  .sun{
+    position:absolute;
+    top:26px;
+    right:26px;
+    width:84px;
+    height:84px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fffbd5 0%,#ffd87a 35%,#f3b728 100%);
+    box-shadow:0 0 28px rgba(240,180,30,.6);
+  }
+  .cloud{
+    position:absolute;
+    height:24px;
+    background:rgba(255,255,255,.7);
+    border-radius:26px;
+  }
+  .cloud::before,.cloud::after{
+    content:"";
+    position:absolute;
+    background:rgba(255,255,255,.7);
+    border-radius:50%;
+  }
+  .cloud1{
+    left:30px;
+    top:56px;
+    width:74px;
+  }
+  .cloud1::before{
+    width:24px;
+    height:24px;
+    left:12px;
+    top:-10px;
+  }
+  .cloud1::after{
+    width:32px;
+    height:32px;
+    right:12px;
+    top:-14px;
+  }
+  .cloud2{
+    left:140px;
+    top:95px;
+    width:86px;
+  }
+  .cloud2::before{
+    width:28px;
+    height:28px;
+    left:16px;
+    top:-12px;
+  }
+  .cloud2::after{
+    width:34px;
+    height:34px;
+    right:14px;
+    top:-18px;
+  }
+  .flower-wrap{
+    position:absolute;
+    left:50%;
+    bottom:70px;
+    transform:translateX(-50%);
+    width:220px;
+    height:270px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .flower{
+    position:relative;
+    width:120px;
+    height:270px;
+  }
+  .stem{
+    position:absolute;
+    left:50%;
+    bottom:0;
+    transform:translateX(-50%);
+    width:10px;
+    height:110px;
+    border-radius:8px;
+    background:linear-gradient(180deg,#4faf53 0%,#2d8e45 100%);
+    box-shadow:inset -2px 0 0 rgba(255,255,255,.2);
+    transition:height .7s ease;
+  }
+  .leaf{
+    position:absolute;
+    width:44px;
+    height:24px;
+    background:linear-gradient(135deg,#88ea9f 0%,#5bc671 100%);
+    transition:transform .7s ease;
+  }
+  .leaf.left{
+    left:20px;
+    bottom:90px;
+    transform:rotate(-30deg);
+    border-radius:70% 0 70% 0;
+  }
+  .leaf.right{
+    right:20px;
+    bottom:90px;
+    transform:rotate(30deg);
+    border-radius:0 70% 0 70%;
+  }
+  .bloom{
+    position:absolute;
+    left:50%;
+    bottom:95px;
+    transform:translateX(-50%);
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    opacity:.32;
+    transition:width .7s ease,height .7s ease,opacity .7s ease;
+  }
+  .petal{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:18px;
+    height:27px;
+    background:linear-gradient(180deg,#ffc7e8 0%,#ff75ba 100%);
+    border-radius:70% 70% 60% 60%;
+    transform-origin:50% 100%;
+    box-shadow:inset 0 -5px 6px rgba(255,255,255,.15);
+  }
+  .p1{transform:translate(-50%,-100%) rotate(0deg) translateY(-10px)}
+  .p2{transform:translate(-50%,-100%) rotate(45deg) translateY(-10px)}
+  .p3{transform:translate(-50%,-100%) rotate(90deg) translateY(-10px)}
+  .p4{transform:translate(-50%,-100%) rotate(135deg) translateY(-10px)}
+  .p5{transform:translate(-50%,-100%) rotate(180deg) translateY(-10px)}
+  .p6{transform:translate(-50%,-100%) rotate(225deg) translateY(-10px)}
+  .p7{transform:translate(-50%,-100%) rotate(270deg) translateY(-10px)}
+  .p8{transform:translate(-50%,-100%) rotate(315deg) translateY(-10px)}
+  .center{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 35%,#fffab5 0%,#f7d85c 35%,#f1b927 100%);
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 12px rgba(240,180,28,.7);
+  }
+  .ground{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:70px;
+    background:linear-gradient(180deg,#a8e59a 0%,#6dcb7d 32%,#3ba05e 100%);
+    border-radius:30px 30px 0 0;
+  }
+  .message{
+    background:rgba(255,255,255,.7);
+    border:1px solid rgba(20,40,70,.05);
+    border-radius:18px;
+    padding:12px 15px;
+    font-weight:600;
+    min-height:54px;
+    display:flex;
+    align-items:center;
+  }
+  .controls{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+    margin-top:auto;
+  }
+  button{
+    border:none;
+    border-radius:14px;
+    height:48px;
+    font-weight:800;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .15s ease,opacity .2s ease;
+  }
+  button:active{
+    transform:scale(.98);
+  }
+  .primary{
+    background:linear-gradient(135deg,#96d8ff 0%,#6eaef8 100%);
+    color:#112847;
+  }
+  .second{
+    background:#edf5ff;
+    color:#1e2f42;
+  }
+  .reset{
+    background:#eff5ea;
+    color:#3a563d;
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">
+    <span>9:41</span>
+    <span>◔ 📶</span>
+  </div>
+  <div class="app">
+    <div>
+      <p class="small">garden</p>
+      <h1>Flower Growth</h1>
+    </div>
+    
+    <div class="stats">
+      <div class="card">
+        <span class="label">Рост</span>
+        <div class="value" id="growth">18%</div>
+      </div>
+      <div class="card">
+        <span class="label">Влага</span>
+        <div class="value" id="water">0%</div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="sun"></div>
+      <div class="cloud cloud1"></div>
+      <div class="cloud cloud2"></div>
+      
+      <div class="flower-wrap">
+        <div class="flower">
+          <div class="stem" id="stem"></div>
+          <div class="leaf left" id="leafL"></div>
+          <div class="leaf right" id="leafR"></div>
+          <div class="bloom" id="bloom">
+            <span class="petal p1"></span>
+            <span class="petal p2"></span>
+            <span class="petal p3"></span>
+            <span class="petal p4"></span>
+            <span class="petal p5"></span>
+            <span class="petal p6"></span>
+            <span class="petal p7"></span>
+            <span class="petal p8"></span>
+            <span class="center"></span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ground"></div>
+    </div>
+
+    <div class="message" id="status">Семечко только что проросло.</div>
+
+    <div class="controls">
+      <button class="primary" id="waterBtn">Полить</button>
+      <button class="second" id="growBtn">Расти</button>
+      <button class="reset" id="resetBtn">Сброс</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  growth: 18,
+  water: 0
+};
+
+const stem = document.getElementById('stem');
+const leafL = document.getElementById('leafL');
+const leafR = document.getElementById('leafR');
+const bloom = document.getElementById('bloom');
+const growthEl = document.getElementById('growth');
+const waterEl = document.getElementById('water');
+const status = document.getElementById('status');
+
+function clamp(v, min, max) {
+  return Math.min(Math.max(v, min), max);
+}
+
+function update() {
+  const g = clamp(state.growth, 0, 100);
+  const w = clamp(state.water, 0, 100);
+
+  const stemHeight = 70 + g * 1.7 + w * 0.8;
+  const bloomSize = 28 + g * 0.8 + w * 0.6;
+  const bloomOpacity = clamp(0.25 + g / 100, 0.25, 1);
+
+  stem.style.height = stemHeight + 'px';
+  bloom.style.width = bloomSize + 'px';
+  bloom.style.height = bloomSize + 'px';
+  bloom.style.opacity = bloomOpacity;
+
+  leafL.style.transform = 'rotate(' + (-(24 + g * 0.18)) + 'deg) scale(' + (0.7 + g / 170) + ')';
+  leafR.style.transform = 'rotate(' + (24 + g * 0.18) + 'deg) scale(' + (0.7 + g / 170) + ')';
+
+  growthEl.textContent = g + '%';
+  waterEl.textContent = w + '%';
+
+  if (g < 30) {
+    status.textContent = 'Семечко только что проросло.';
+  } else if (g < 60) {
+    status.textContent = 'Стебель крепнет и тянется к свету.';
+  } else if (g < 85) {
+    status.textContent = 'Цветок готовится к раскрытию.';
+  } else {
+    status.textContent = 'Пышный цветок распустился!';
+  }
+}
+
+document.getElementById('waterBtn').addEventListener('click', function() {
+  state.water = clamp(state.water + 16, 0, 100);
+  state.growth = clamp(state.growth + 6, 0, 100);
+  update();
+});
+
+document.getElementById('growBtn').addEventListener('click', function() {
+  state.growth = clamp(state.growth + 12, 0, 100);
+  if (state.growth > 20) {
+    state.water = clamp(state.water + 4, 0, 100);
+  }
+  update();
+});
+
+document.getElementById('resetBtn').addEventListener('click', function() {
+  state.growth = 18;
+  state.water = 0;
+  update();
+});
+
+update();
+</script>
+</body>
+</html>
